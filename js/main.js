@@ -149,8 +149,6 @@ class App {
         this.ui.log(`Starting build for ${this.buildConfig.device}...`);
         
         try {
-            // Request write permission immediately to satisfy User Activation requirement
-            // This ensures we can save the bitstream later even if synthesis takes time.
             if (this.fs.dirHandle) {
                 const status = await this.fs.dirHandle.queryPermission({ mode: 'readwrite' });
                 if (status !== 'granted') {
@@ -163,22 +161,23 @@ class App {
             const allFilePaths = this.fs.getFileList();
             
             for (const path of allFilePaths) {
-                // Only load relevant files into memory
                 if (path.endsWith(".v") || path.endsWith(".cst") || path.endsWith(".py") || path === "config.json") {
-                    const data = await this.fs.readAsUint8Array(path);
-                    files[path] = data;
+                    files[path] = await this.fs.readAsUint8Array(path);
                 }
             }
 
             // 1. Synthesis
+            this.ui.log("--- Step 1: Synthesis ---");
             const synthOut = await this.toolchain.runSynthesis(files, this.buildConfig.top);
             Object.assign(files, synthOut);
 
             // 2. PnR
+            this.ui.log("--- Step 2: Place & Route ---");
             const pnrOut = await this.toolchain.runPnR(files, this.buildConfig.top, this.buildConfig.device, this.buildConfig.family, this.buildConfig.cst);
             Object.assign(files, pnrOut);
 
             // 3. Pack
+            this.ui.log("--- Step 3: Bitstream Generation ---");
             const packOut = await this.toolchain.runPack(files, this.buildConfig.top, this.buildConfig.family, this.buildConfig.output);
             
             if (packOut[this.buildConfig.output]) {
@@ -186,7 +185,6 @@ class App {
                 await this.fs.writeFile(this.buildConfig.output, bitstream);
                 this.bitstreamData = bitstream;
                 
-                // Refresh and re-render
                 await this.fs.refresh();
                 this.renderFileTree();
                 
