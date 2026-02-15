@@ -133,6 +133,14 @@ main {
     background-color: #37373d;
 }
 
+.file-item.modified::after {
+    content: "●";
+    float: right;
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-left: 10px;
+}
+
 #editor-container {
     flex: 1;
     overflow: hidden;

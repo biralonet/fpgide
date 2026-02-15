@@ -12,7 +12,7 @@ class App {
         this.programmer = new Programmer(this.ui);
         
         this.currentFilePath = null;
-        this.isDirty = false;
+        this.dirtyFiles = new Set();
         this.buildConfig = {
             top: "top",
             family: "GW2A-18C",
@@ -23,8 +23,11 @@ class App {
 
         try {
             this.editor = new Editor(document.getElementById("editor"), () => {
-                this.isDirty = true;
-                document.getElementById("btn-save").disabled = false;
+                if (this.currentFilePath) {
+                    this.dirtyFiles.add(this.currentFilePath);
+                    document.getElementById("btn-save").disabled = false;
+                    this.renderFileTree();
+                }
             });
         } catch (e) {
             console.error("Failed to initialize editor:", e);
@@ -106,6 +109,7 @@ class App {
             const div = document.createElement("div");
             div.className = "file-item";
             if (path === this.currentFilePath) div.classList.add("active");
+            if (this.dirtyFiles.has(path)) div.classList.add("modified");
             div.textContent = path;
             div.addEventListener("click", () => this.loadFile(path));
             tree.appendChild(div);
@@ -113,7 +117,7 @@ class App {
     }
 
     async loadFile(path) {
-        if (this.isDirty) {
+        if (this.currentFilePath && this.dirtyFiles.has(this.currentFilePath)) {
             if (!confirm("You have unsaved changes. Discard them?")) return;
         }
 
@@ -121,8 +125,7 @@ class App {
             const content = await this.fs.readFile(path);
             this.editor.setContent(content);
             this.currentFilePath = path;
-            this.isDirty = false;
-            document.getElementById("btn-save").disabled = true;
+            document.getElementById("btn-save").disabled = !this.dirtyFiles.has(path);
             this.ui.setStatus(`Editing: ${path}`);
             this.renderFileTree();
         } catch (e) {
@@ -135,9 +138,10 @@ class App {
         try {
             const content = this.editor.getContent();
             await this.fs.writeFile(this.currentFilePath, content);
-            this.isDirty = false;
+            this.dirtyFiles.delete(this.currentFilePath);
             document.getElementById("btn-save").disabled = true;
             this.ui.success(`Saved ${this.currentFilePath}`);
+            this.renderFileTree();
         } catch (e) {
             this.ui.error(`Failed to save: ${e.message}`);
         }
