@@ -10,6 +10,12 @@ export class UI {
         div.className = `log-${type}`;
         div.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
         this.logElement.appendChild(div);
+        
+        // Limit log buffer to 10,000 lines to prevent memory leaks
+        while (this.logElement.childElementCount > 10000) {
+            this.logElement.removeChild(this.logElement.firstElementChild);
+        }
+
         this.logElement.scrollTop = this.logElement.scrollHeight;
     }
 
