@@ -1,31 +1,38 @@
-import { 
-    EditorView, 
-    basicSetup, 
-    keymap, 
-    EditorState, 
-    StreamLanguage, 
-    indentWithTab 
-} from "https://esm.sh/codemirror@6.0.1?deps=@codemirror/state@6.4.1";
+// Unified CodeMirror imports
+import { EditorView, basicSetup } from "https://esm.sh/codemirror@6.0.1?deps=@codemirror/state@6.4.1";
+import { EditorState } from "https://esm.sh/@codemirror/state@6.4.1";
+import { keymap } from "https://esm.sh/@codemirror/view@6.34.1?deps=@codemirror/state@6.4.1";
+import { indentWithTab } from "https://esm.sh/@codemirror/commands@6.7.1?deps=@codemirror/state@6.4.1";
+import { StreamLanguage, defaultHighlightStyle, syntaxHighlighting } from "https://esm.sh/@codemirror/language@6.10.3?deps=@codemirror/state@6.4.1";
+import { tags } from "https://esm.sh/@lezer/highlight@1.2.1";
 
 const verilogKeywords = "always|and|assign|automatic|begin|buf|bufif0|bufif1|case|casex|casez|cell|config|deassign|default|defparam|design|disable|edge|else|end|endcase|endconfig|endfunction|endgenerate|endmodule|endprimitive|endspecify|endtable|endtask|event|for|force|forever|fork|function|generate|genvar|highz0|highz1|if|ifnone|incdir|include|initial|inout|input|instance|integer|join|large|liblist|library|localparam|macromodule|medium|module|nand|negedge|nmos|nor|noshowcancelled|not|notif0|notif1|or|output|parameter|pmos|posedge|primitive|pull0|pull1|pulldown|pullup|pulsestyle_onevent|pulsestyle_ondetect|rcmos|real|realtime|reg|release|repeat|rnmos|rpmos|rtran|rtranif0|rtranif1|scalared|showcancelled|signed|small|specify|specparam|strong0|strong1|supply0|supply1|table|task|time|tran|tranif0|tranif1|tri|tri0|tri1|triand|trior|trireg|unsigned|use|vectored|wait|wand|weak0|weak1|while|wire|wor|xnor|xor";
 
 const verilogLanguage = StreamLanguage.define({
     token(stream) {
         if (stream.eatSpace()) return null;
-        if (stream.match("//")) { stream.skipToEnd(); return "comment"; }
+        if (stream.match("//")) { stream.skipToEnd(); return "lineComment"; }
         if (stream.match("/*")) {
             while (!stream.match("*/") && !stream.atEnd()) stream.next();
-            return "comment";
+            return "blockComment";
         }
         
         if (stream.match(new RegExp(`\\b(${verilogKeywords})\\b`))) return "keyword";
         if (stream.match(/"(?:[^"\\\\]|\\\\.)*"/)) return "string";
-        if (stream.match(/\\d+/)) return "number";
+        if (stream.match(/'[01xXzZ?]/) || stream.match(/\b\d+(['bBoOdDhH][0-9a-fA-F_xXzZ?]+)?\b/)) return "number";
+        if (stream.match(/[(){}\[\],;.]/)) return "punctuation";
+        if (stream.match(/[+\-*\/%=&|^<>!~?:]+/)) return "operator";
         
         stream.next();
         return null;
+    },
+    languageData: {
+        commentTokens: { line: "//", block: { open: "/*", close: "*/" } }
     }
 });
+
+// Map the custom tokens to CodeMirror tags
+const verilogHighlighting = syntaxHighlighting(defaultHighlightStyle);
 
 export class Editor {
     constructor(domElement, onDocChange) {
@@ -38,6 +45,7 @@ export class Editor {
                         basicSetup,
                         keymap.of([indentWithTab]),
                         verilogLanguage,
+                        verilogHighlighting,
                         EditorView.updateListener.of((update) => {
                             if (update.docChanged && !this.ignoreChanges) {
                                 this.onDocChange();
