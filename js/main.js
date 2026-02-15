@@ -133,9 +133,13 @@ class App {
     async loadFile(path) {
         try {
             const content = await this.fs.readFile(path);
-            this.originalContents.set(path, content);
-            this.editor.setContent(content);
-            this.currentFilePath = path;
+            // Normalize line endings to avoid phantom modifications
+            const normalizedContent = content.replace(/\r\n/g, "\n");
+            
+            this.originalContents.set(path, normalizedContent);
+            this.currentFilePath = path; // Set path BEFORE content to help listener
+            this.editor.setContent(normalizedContent);
+            
             document.getElementById("btn-save").disabled = !this.dirtyFiles.has(path);
             this.ui.setStatus(`Editing: ${path}`);
             this.renderFileTree();
@@ -148,8 +152,9 @@ class App {
         if (!this.currentFilePath) return;
         try {
             const content = this.editor.getContent();
-            await this.fs.writeFile(this.currentFilePath, content);
-            this.originalContents.set(this.currentFilePath, content);
+            const normalizedContent = content.replace(/\r\n/g, "\n");
+            await this.fs.writeFile(this.currentFilePath, normalizedContent);
+            this.originalContents.set(this.currentFilePath, normalizedContent);
             this.dirtyFiles.delete(this.currentFilePath);
             document.getElementById("btn-save").disabled = true;
             this.ui.success(`Saved ${this.currentFilePath}`);
