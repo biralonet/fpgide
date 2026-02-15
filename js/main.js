@@ -149,6 +149,16 @@ class App {
         this.ui.log(`Starting build for ${this.buildConfig.device}...`);
         
         try {
+            // Request write permission immediately to satisfy User Activation requirement
+            // This ensures we can save the bitstream later even if synthesis takes time.
+            if (this.fs.dirHandle) {
+                const status = await this.fs.dirHandle.queryPermission({ mode: 'readwrite' });
+                if (status !== 'granted') {
+                    this.ui.log("Requesting write permission for folder...");
+                    await this.fs.dirHandle.requestPermission({ mode: 'readwrite' });
+                }
+            }
+
             const files = {};
             const allFilePaths = this.fs.getFileList();
             
