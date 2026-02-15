@@ -1,19 +1,22 @@
 :root {
-    --bg-primary: #1e1e1e;
-    --bg-secondary: #252526;
-    --bg-tertiary: #2d2d2d;
-    --text-primary: #cccccc;
-    --text-muted: #858585;
-    --accent: #0e639c;
-    --border: #333333;
-    --terminal-bg: #1e1e1e;
+    --bg-primary: #ffffff;
+    --bg-secondary: #f3f3f3;
+    --bg-tertiary: #eeeeee;
+    --text-primary: #333333;
+    --text-muted: #666666;
+    --accent: #007acc;
+    --border: #dddddd;
+    --terminal-bg: #ffffff;
+    --item-hover: #e8e8e8;
+    --item-active: #007acc;
+    --item-active-text: #ffffff;
 }
 
 body, html {
     margin: 0;
     padding: 0;
     height: 100%;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     background-color: var(--bg-primary);
     color: var(--text-primary);
     overflow: hidden;
@@ -48,17 +51,17 @@ header {
 }
 
 button {
-    background-color: var(--bg-tertiary);
+    background-color: #ffffff;
     color: var(--text-primary);
     border: 1px solid var(--border);
     padding: 4px 12px;
     cursor: pointer;
     font-size: 13px;
-    border-radius: 2px;
+    border-radius: 4px;
 }
 
 button:hover:not(:disabled) {
-    background-color: #3e3e3e;
+    background-color: #f0f0f0;
 }
 
 button:disabled {
@@ -66,13 +69,14 @@ button:disabled {
     cursor: not-allowed;
 }
 
-#btn-build, #btn-flash {
+#btn-build, #btn-flash, #btn-connect {
     background-color: var(--accent);
+    color: white;
     border-color: var(--accent);
 }
 
-#btn-build:hover:not(:disabled), #btn-flash:hover:not(:disabled) {
-    background-color: #1177bb;
+#btn-build:hover:not(:disabled), #btn-flash:hover:not(:disabled), #btn-connect:hover:not(:disabled) {
+    background-color: #0062a3;
 }
 
 .separator {
@@ -123,21 +127,24 @@ main {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    color: var(--text-primary);
 }
 
 .file-item:hover {
-    background-color: #2a2d2e;
+    background-color: var(--item-hover);
 }
 
 .file-item.active {
-    background-color: #37373d;
+    background-color: var(--item-active);
+    color: var(--item-active-text);
 }
 
 .file-item.modified::after {
     content: "●";
     float: right;
     font-size: 10px;
-    color: var(--text-muted);
+    color: inherit;
+    opacity: 0.7;
     margin-left: 10px;
 }
 
@@ -174,26 +181,29 @@ footer {
 
 #btn-clear-log {
     background: none;
-    border: none;
+    border: 1px solid var(--border);
     padding: 2px 6px;
     font-size: 10px;
+    color: var(--text-primary);
 }
 
 #log {
     flex: 1;
     overflow-y: auto;
     padding: 8px;
-    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
     font-size: 12px;
     line-height: 1.4;
     white-space: pre-wrap;
-    color: #d4d4d4;
+    color: #333333;
+    border-top: 1px solid #f0f0f0;
 }
 
-.log-info { color: #d4d4d4; }
-.log-error { color: #f44747; }
-.log-warn { color: #cca700; }
-.log-success { color: #6a9955; }
+.log-info { color: #333333; }
+.log-error { color: #d32f2f; font-weight: bold; }
+.log-warn { color: #f57c00; }
+.log-success { color: #388e3c; font-weight: bold; }
 
 /* CodeMirror overrides */
 .cm-editor { height: 100%; }
+.cm-gutters { background-color: #f7f7f7 !important; border-right: 1px solid #ddd !important; }
