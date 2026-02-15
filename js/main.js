@@ -13,7 +13,8 @@ class App {
         
         this.currentFilePath = null;
         this.dirtyFiles = new Set();
-        this.originalContents = new Map(); // path -> original string
+        this.originalContents = new Map(); // path -> original string on disk
+        this.fileBuffers = new Map();      // path -> current unsaved string in editor
         this.buildConfig = {
             top: "top",
             family: "GW2A-18C",
@@ -28,6 +29,9 @@ class App {
                     const currentContent = this.editor.getContent();
                     const originalContent = this.originalContents.get(this.currentFilePath);
                     
+                    // Update the in-memory buffer
+                    this.fileBuffers.set(this.currentFilePath, currentContent);
+
                     if (currentContent !== originalContent) {
                         if (!this.dirtyFiles.has(this.currentFilePath)) {
                             this.dirtyFiles.add(this.currentFilePath);
@@ -132,13 +136,20 @@ class App {
 
     async loadFile(path) {
         try {
-            const content = await this.fs.readFile(path);
-            // Normalize line endings to avoid phantom modifications
-            const normalizedContent = content.replace(/\r\n/g, "\n");
-            
-            this.originalContents.set(path, normalizedContent);
-            this.currentFilePath = path; // Set path BEFORE content to help listener
-            this.editor.setContent(normalizedContent);
+            this.currentFilePath = path; // Set path first
+
+            // If we already have this file in our buffers, use that
+            if (this.fileBuffers.has(path)) {
+                this.editor.setContent(this.fileBuffers.get(path));
+            } else {
+                // Otherwise read from disk
+                const content = await this.fs.readFile(path);
+                const normalizedContent = content.replace(/\r\n/g, "\n");
+                
+                this.originalContents.set(path, normalizedContent);
+                this.fileBuffers.set(path, normalizedContent);
+                this.editor.setContent(normalizedContent);
+            }
             
             document.getElementById("btn-save").disabled = !this.dirtyFiles.has(path);
             this.ui.setStatus(`Editing: ${path}`);
@@ -154,8 +165,11 @@ class App {
             const content = this.editor.getContent();
             const normalizedContent = content.replace(/\r\n/g, "\n");
             await this.fs.writeFile(this.currentFilePath, normalizedContent);
+            
             this.originalContents.set(this.currentFilePath, normalizedContent);
+            this.fileBuffers.set(this.currentFilePath, normalizedContent);
             this.dirtyFiles.delete(this.currentFilePath);
+            
             document.getElementById("btn-save").disabled = true;
             this.ui.success(`Saved ${this.currentFilePath}`);
             this.renderFileTree();
@@ -183,7 +197,13 @@ class App {
             
             for (const path of allFilePaths) {
                 if (path.endsWith(".v") || path.endsWith(".cst") || path.endsWith(".py") || path === "config.json") {
-                    files[path] = await this.fs.readAsUint8Array(path);
+                    // Use buffered content if available, otherwise read from disk
+                    if (this.fileBuffers.has(path)) {
+                        const content = this.fileBuffers.get(path);
+                        files[path] = new TextEncoder().encode(content);
+                    } else {
+                        files[path] = await this.fs.readAsUint8Array(path);
+                    }
                 }
             }
 
