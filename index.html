@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>fpgide</title>
+    <script src="coi-serviceworker.min.js"></script>
+    <script>
+        console.log("Cross-origin isolated:", window.crossOriginIsolated);
+        console.log("SharedArrayBuffer supported:", typeof SharedArrayBuffer !== "undefined");
+        if (!window.crossOriginIsolated) {
+            console.warn("IDE is not cross-origin isolated. SharedArrayBuffer (required for Flashing) will be missing.");
+        }
+    </script>
+    <link rel="stylesheet" href="style.css">
+    <script type="importmap">
+    {
+      "imports": {
+        "@yowasp/runtime": "https://cdn.jsdelivr.net/npm/@yowasp/runtime@11.0.69/gen/bundle.js",
+        "@yowasp/yosys": "https://cdn.jsdelivr.net/npm/@yowasp/yosys@0.59.84-dev.1027/gen/bundle.js",
+        "@yowasp/nextpnr-himbaechel-gowin": "https://cdn.jsdelivr.net/npm/@yowasp/nextpnr-himbaechel-gowin@0.9.686/gen/bundle.js",
+        "@yowasp/openfpgaloader": "https://cdn.jsdelivr.net/npm/@yowasp/openfpgaloader@1.0.0-16.156/gen/bundle.js"
+      }
+    }
+    </script>
+</head>
+<body>
+    <div id="app">
+        <header>
+            <div class="logo">fpgide</div>
+            <div class="toolbar">
+                <button id="btn-open-folder">Open Folder</button>
+                <button id="btn-new-file" disabled>New File</button>
+                <button id="btn-save" disabled>Save</button>
+                <div class="separator"></div>
+                <button id="btn-build" disabled>Build</button>
+                <button id="btn-connect">Connect</button>
+                <button id="btn-flash" disabled>Flash</button>
+            </div>
+            <div class="status" id="status">Ready</div>
+        </header>
+        <main>
+            <aside id="sidebar">
+                <div class="sidebar-header">Files</div>
+                <div id="file-tree"></div>
+            </aside>
+            <section id="editor-container">
+                <div id="editor"></div>
+            </section>
+        </main>
+        <footer id="terminal">
+            <div class="terminal-header">
+                <span>Output</span>
+                <button id="btn-clear-log">Clear</button>
+            </div>
+            <div id="log"></div>
+        </footer>
+    </div>
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>
