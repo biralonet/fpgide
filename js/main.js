@@ -13,6 +13,7 @@ class App {
         
         this.currentFilePath = null;
         this.dirtyFiles = new Set();
+        this.originalContents = new Map(); // path -> original string
         this.buildConfig = {
             top: "top",
             family: "GW2A-18C",
@@ -24,9 +25,22 @@ class App {
         try {
             this.editor = new Editor(document.getElementById("editor"), () => {
                 if (this.currentFilePath) {
-                    this.dirtyFiles.add(this.currentFilePath);
-                    document.getElementById("btn-save").disabled = false;
-                    this.renderFileTree();
+                    const currentContent = this.editor.getContent();
+                    const originalContent = this.originalContents.get(this.currentFilePath);
+                    
+                    if (currentContent !== originalContent) {
+                        if (!this.dirtyFiles.has(this.currentFilePath)) {
+                            this.dirtyFiles.add(this.currentFilePath);
+                            document.getElementById("btn-save").disabled = false;
+                            this.renderFileTree();
+                        }
+                    } else {
+                        if (this.dirtyFiles.has(this.currentFilePath)) {
+                            this.dirtyFiles.delete(this.currentFilePath);
+                            document.getElementById("btn-save").disabled = true;
+                            this.renderFileTree();
+                        }
+                    }
                 }
             });
         } catch (e) {
@@ -117,12 +131,9 @@ class App {
     }
 
     async loadFile(path) {
-        if (this.currentFilePath && this.dirtyFiles.has(this.currentFilePath)) {
-            if (!confirm("You have unsaved changes. Discard them?")) return;
-        }
-
         try {
             const content = await this.fs.readFile(path);
+            this.originalContents.set(path, content);
             this.editor.setContent(content);
             this.currentFilePath = path;
             document.getElementById("btn-save").disabled = !this.dirtyFiles.has(path);
@@ -138,6 +149,7 @@ class App {
         try {
             const content = this.editor.getContent();
             await this.fs.writeFile(this.currentFilePath, content);
+            this.originalContents.set(this.currentFilePath, content);
             this.dirtyFiles.delete(this.currentFilePath);
             document.getElementById("btn-save").disabled = true;
             this.ui.success(`Saved ${this.currentFilePath}`);
